@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>팔로워십 역량 자가 검사</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .question-row:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        /* Custom radio button styles for better mobile experience */
+        .radio-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s;
+        }
+        .radio-label:hover {
+            background-color: #e5e7eb;
+        }
+        input[type="radio"]:checked + span {
+            font-weight: bold;
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+<div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden" id="capture-area">
+    
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-6 text-center">
+        <h1 class="text-2xl md:text-3xl font-bold">버트 켈리의 팔로워십 역량 자가 검사</h1>
+        <p class="mt-2 text-blue-100 text-sm md:text-base">현재 나의 팔로워십 유형을 점검하고 성장 방안을 탐색해 보세요.</p>
+    </header>
+
+    <!-- App Content Area -->
+    <div class="p-6 md:p-8" id="app-content">
+        <!-- The content will be dynamically rendered here by JavaScript -->
+    </div>
+</div>
+
+<!-- Footer / Download Button -->
+<div class="max-w-4xl mx-auto mt-6 text-center pb-8" id="footer-actions" style="display: none;">
+    <button onclick="downloadReport()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 flex items-center justify-center mx-auto">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        결과 보고서 다운로드 (JPG)
+    </button>
+</div>
+
+<script>
+    // --- Data Definitions ---
+
+    // Followership Questions based on "2. 로버트켈리_팔로워십_문항.jpg"
+    // axis: 'X' for Active/Passive Engagement, 'Y' for Independent/Dependent Thinking
+    const questions = [
+        { id: 1, text: "당신의 일은 자신에게 중요한 사회적 목표나 개인적인 꿈을 성취하는데 도움이 되는가?", axis: "Y" },
+        { id: 2, text: "당신 개인의 업무 목표가 조직의 최고 목표와 조화하는가?", axis: "X" },
+        { id: 3, text: "당신은 최선의 아이디어와 능력을 일과 조직에 쏟아 붓고 지극히 헌신적이며 정열적으로 일하는가?", axis: "X" },
+        { id: 4, text: "당신의 열의가 확산되어 동료 직원들을 활기차게 만드는가?", axis: "X" },
+        { id: 5, text: "리더의 지시를 기다리거나 단순히 떠맡는 것이 아니라, 조직에 가장 중요한 목표를 하기 위해서는 무엇이 제일 중요한 조직 활동인가를 자신이 직접 판단하는가?", axis: "Y" },
+        { id: 6, text: "리더와 조직에 더욱 가치 있는 사람이 되기 위해서 당신은 그런 중요한 활동 속에서 독특한 능력을 적극적으로 발휘하는가?", axis: "X" },
+        { id: 7, text: "새로운 일이나 임무가 시작되었을 때 리더가 중요한 의미라고 생각하는 업무에서 곧바로 공적을 세우는가?", axis: "X" },
+        { id: 8, text: "당신이 기한 안에 일을 훌륭히 해낼 뿐만 아니라, 때로 당신이 '부족한 점을 채울' 것이라는 점을 믿고 리더가 어려운 임무를 당신에게 맡기는가?", axis: "X" },
+        { id: 9, text: "당신은 자신의 업무 범위를 벗어나는 일도 찾아내서 성공적으로 완수하기 위해 솔선수범하는가?", axis: "X" },
+        { id: 10, text: "집단(팀) 프로젝트의 리더가 아닐 때도 맡은 일보다 많은 일을 하고 능력껏 공헌을 하는가?", axis: "X" },
+        { id: 11, text: "리더나 조직의 목표에 크게 공헌할 수 있는 새로운 아이디어를 독자적으로 고안해서 적극적으로 제기하는가?", axis: "Y" },
+        { id: 12, text: "어려운 문제(기술적인 것이든 조직적인 것이든)를 리더에게 의존해서 해결하기보다는 스스로 해결하려고 하는가?", axis: "Y" },
+        { id: 13, text: "자신은 아무런 인정을 받지 못할 지라도 다른 동료들이 좋은 평가를 받도록 돕는가?", axis: "X" },
+        { id: 14, text: "필요한 경우 일부러 반대 의견을 개진해서라도 리더와 집단(팀)의 아이디어, 계획의 상향 잠재력과 하향 위험성 모두를 볼 수 있도록 돕는가?", axis: "Y" },
+        { id: 15, text: "리더의 요구나 목표, 제약을 이해하고 그것들을 충족시키기 위해서 열심히 일하는가?", axis: "X" },
+        { id: 16, text: "자신에 대한 평가를 뒤로 미루기보다는 장점과 약점을 적극적이고 솔직하게 인정하는가?", axis: "Y" },
+        { id: 17, text: "지시받은 일만을 하는 데서 탈피해 리더가 내린 판단이 얼마나 현명한가를 스스로 평가해 보는 습관이 있는가?", axis: "Y" },
+        { id: 18, text: "리더가 자신의 전문분야나 개인적인 흥미에 정면으로 배치되는 일을 해 달라고 부탁할 때 '싫다'고 할 수 있는가?", axis: "Y" },
+        { id: 19, text: "리더나 집단(팀)의 기준이 아니라 자신의 윤리적 기준에 따라 행동하는가?", axis: "Y" },
+        { id: 20, text: "당신이 속한 집단(팀)과 갈등하거나 리더로부터 보복을 당한다고 해도 당신은 중요한 이슈에 대해서 자기 견해를 주장하는가?", axis: "Y" }
+    ];
+
+    // Followership Types Information based on "4. 로버트켈리_팔로워십_해설.pdf"
+    const followershipTypes = {
+        "실무형": {
+            name: "실무형 팔로워 (Pragmatic Survivor)",
+            color: "bg-blue-500",
+            textColor: "text-blue-600",
+            description: "전체 팔로워의 20~30%를 차지하며 별로 비판적이지 않으며 리더의 가치와 결단에 의문을 품기도 하나 적극으로 대립하지 않고, 시키는 일은 잘 수행하지만 그 이상의 모험은 하지 않는 유형입니다.",
+            pros: [
+                "조직 운영 방침에 민감하고 균형 잡힌 시각을 가짐",
+                "조직이 극단을 치닫지 않도록 중용을 지킴",
+                "규칙, 규정을 잘 준수함"
+            ],
+            cons: [
+                "사적인 이익을 위해 흥정하려 함",
+                "모험을 기피하고 적당한 열의만 보임",
+                "리더의 결정에 대체로 무비판적임"
+            ],
+            coaching: [
+                "장기적인 관점에서의 인생 목표 및 비전 재검토",
+                "현재 업무에 대한 진정한 열정과 전념 회복",
+                "주변 동료를 적극적으로 돕는 이타적인 자세 함양",
+                "안정 지향적인 태도에서 벗어나 건전한 모험 시도"
+            ]
+        },
+        "소외형": {
+            name: "소외형 팔로워 (Alienated Follower)",
+            color: "bg-orange-300",
+            textColor: "text-orange-600",
+            description: "전체 팔로워의 15~25%를 차지하며 독립적이고 비판적인 사고를 가지고 있지만 업무 수행에 있어서는 수동적인 특성을 갖습니다. 부당한 대우를 받고 있다는 피해의식을 갖기 쉽습니다.",
+            pros: [
+                "스스로 생각할 줄 아는 비판적이고 독립적인 시각",
+                "진실 파악을 위한 건전한 회의주의",
+                "조직의 양심 역할을 하며 약자 편에 서는 경향"
+            ],
+            cons: [
+                "냉소적이고 부정적이며 시비조의 태도 (이유 없는 반항)",
+                "팀 플레이보다는 불만을 품고 침묵함",
+                "소극적인 역할 수행으로 능력을 다 발휘하지 않음"
+            ],
+            coaching: [
+                "조직 및 리더와 비전을 적극적으로 공유하려는 노력",
+                "과거의 실망감을 극복하고 신뢰 관계 회복 시도",
+                "업무 목표를 현재 상황에 맞게 긍정적으로 재조정",
+                "비판적 시각을 대안 제시로 발전시키는 건설적 태도 함양"
+            ]
+        },
+        "순응형": {
+            name: "순응형 팔로워 (Conformist Follower)",
+            color: "bg-gray-200",
+            textColor: "text-gray-700",
+            description: "전체 팔로워의 20~30%를 차지하며 비판적인 사고는 부족하지만 자신의 역할을 적극적으로 수행하는 유형입니다. 리더의 권력에 순종하며 결단에 지나치게 의존합니다.",
+            pros: [
+                "기쁜 마음으로 과업을 수행하고 팀 플레이에 능함",
+                "리더에 대한 굳건한 믿음과 헌신",
+                "지시받은 사항을 신속하게 실행하는 실천력"
+            ],
+            cons: [
+                "독립적 사고나 창의성이 부족함",
+                "손해가 생겨도 갈등을 회피하려는 경향",
+                "무조건적인 'Yes Man'으로 전락할 위험"
+            ],
+            coaching: [
+                "스스로 생각하고 판단하는 독립적/비판적 사고력 배양",
+                "자신의 견해를 명확히 표현하는 용기와 자신감 훈련",
+                "리더의 지시에 의문을 제기할 수 있는 전문성 확보",
+                "건전한 갈등은 조직 발전에 필요하다는 인식 전환"
+            ]
+        },
+        "수동형": {
+            name: "수동형 팔로워 (Passive Follower)",
+            color: "bg-purple-300",
+            textColor: "text-purple-600",
+            description: "전체 팔로워의 5~10%를 차지하며 비판적인 생각도 하지 않고 적극적으로 참여하지도 않는 유형입니다. 지시 없이는 주어진 임무를 수행하지 않습니다.",
+            pros: [
+                "리더의 판단에 철저히 따르며 지시된 선을 넘지 않음",
+                "(조직이 극도로 통제적일 경우) 마찰을 일으키지 않음"
+            ],
+            cons: [
+                "스스로 행동하지 않아 잦은 감독과 통제가 필요함",
+                "책임감이 결여되어 있고 솔선수범하지 않음",
+                "남들이 하는 대로 따라가려는 무비판적 동조"
+            ],
+            coaching: [
+                "팔로워십의 긍정적인 기능과 중요성 재학습",
+                "조직의 목표 달성을 위한 희생정신과 주인의식 함양",
+                "작은 일부터 스스로 찾아서 하는 적극적 참여 습관화",
+                "업무에서 개인적인 의미와 보람을 찾는 노력"
+            ]
+        },
+        "모범형": {
+            name: "모범형 팔로워 (Exemplary Follower)",
+            color: "bg-green-200",
+            textColor: "text-green-700",
+            description: "전체 팔로워의 약 5~10%를 차지하며 스스로 생각하고 알아서 행동할 줄 아는 이상적인 팔로워입니다. 능동적으로 참여하며 비판적 사고도 뛰어납니다.",
+            pros: [
+                "독립성이 강하고 혁신적이며 독창적인 아이디어 제시",
+                "건설적인 비판을 하며 리더와도 용감하게 맞설 수 있음",
+                "솔선수범하며 자신이 맡은 일보다 더 많은 일을 함"
+            ],
+            cons: [
+                "(과도할 경우) 주변 팀원들의 의욕을 상실시킬 수 있음",
+                "다른 팀원들과 마음의 장막이나 벽이 생길 수 있음"
+            ],
+            coaching: [
+                "현재의 뛰어난 역량을 유지하며 조직의 롤모델 역할 수행",
+                "동료들의 의견을 경청하고 배려하는 포용력 강화",
+                "주변 사람들도 모범형으로 성장할 수 있도록 멘토링 제공",
+                "자신의 빠른 페이스로 인해 동료들이 소외되지 않도록 주의"
+            ]
+        }
+    };
+
+    // --- State Variables ---
+    let answers = {};
+
+    // --- Functions ---
+
+    function renderQuestionnaire() {
+        const contentDiv = document.getElementById('app-content');
+        
+        let html = `
+            <div class="mb-6 bg-blue-50 p-4 rounded-lg text-sm md:text-base border border-blue-100">
+                <p class="font-bold mb-2 text-blue-800">평가 척도</p>
+                <div class="grid grid-cols-3 md:grid-cols-7 gap-2 text-center">
+                    <div>(0) 전혀 그렇지 않다</div>
+                    <div>(1) 그렇지 않다</div>
+                    <div>(2) 다소 그렇지 않다</div>
+                    <div>(3) 보통이다</div>
+                    <div>(4) 다소 그렇다</div>
+                    <div>(5) 그렇다</div>
+                    <div>(6) 매우 그렇다</div>
+                </div>
+            </div>
+            
+            <form id="assessment-form" onsubmit="calculateResults(event)">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700">
+                                <th class="p-3 border-b-2 font-semibold w-12 text-center">번호</th>
+                                <th class="p-3 border-b-2 font-semibold">문항</th>
+                                <th class="p-3 border-b-2 font-semibold min-w-[200px] text-center">점수 선택 (0~6)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        questions.forEach((q, index) => {
+            html += `
+                <tr class="question-row border-b border-gray-200">
+                    <td class="p-3 text-center font-medium text-gray-500">${q.id}</td>
+                    <td class="p-3 text-sm md:text-base">${q.text}</td>
+                    <td class="p-3">
+                        <div class="flex justify-between items-center w-full max-w-[250px] mx-auto">
+            `;
+            
+            for (let i = 0; i <= 6; i++) {
+                html += `
+                    <label class="radio-label">
+                        <input type="radio" name="q${q.id}" value="${i}" required class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500">
+                        <span class="text-xs mt-1">${i}</span>
+                    </label>
+                `;
+            }
+            
+            html += `
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-8 text-center">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded shadow transition duration-300">
+                        결과 확인하기
+                    </button>
+                </div>
+            </form>
+        `;
+
+        contentDiv.innerHTML = html;
+        document.getElementById('footer-actions').style.display = 'none';
+        window.scrollTo(0, 0);
+    }
+
+    function calculateResults(event) {
+        event.preventDefault();
+        
+        const form = document.getElementById('assessment-form');
+        const formData = new FormData(form);
+        let scoreX = 0; // Active/Passive Engagement
+        let scoreY = 0; // Independent/Dependent Thinking
+
+        questions.forEach(q => {
+            const val = parseInt(formData.get(`q${q.id}`));
+            if (!isNaN(val)) {
+                if (q.axis === 'X') {
+                    scoreX += val;
+                } else if (q.axis === 'Y') {
+                    scoreY += val;
+                }
+            }
+        });
+
+        const type = determineType(scoreX, scoreY);
+        renderReport(scoreX, scoreY, type);
+    }
+
+    function determineType(x, y) {
+        // Based on "3. 로버트켈리_팔로워십_유형.png"
+        // X-axis: Active Engagement (0 - 60)
+        // Y-axis: Independent Thinking (0 - 60)
+        // Middle Box (Pragmatic): X [20, 40], Y [20, 40] -> Adjusting based on standard Kelley model mapping if specific thresholds are needed, 
+        // but looking at image 3, pragmatics are bounded by inner box. 
+        // Let's define the exact boundaries based on the image 3 coordinates:
+        // X-axis (Engagement): Passive(0-30), Active(30-60). Inner box: 20-40
+        // Y-axis (Thinking): Dependent(0-30), Independent(30-60). Inner box: 20-40
+
+        if (x >= 20 && x <= 40 && y >= 20 && y <= 40) {
+            return "실무형";
+        } else if (x < 30 && y >= 30) {
+            return "소외형";
+        } else if (x >= 30 && y >= 30) {
+            return "모범형";
+        } else if (x < 30 && y < 30) {
+            return "수동형";
+        } else if (x >= 30 && y < 30) {
+            return "순응형";
+        }
+        
+        // Fallback (should not happen with strict boundaries, but just in case)
+        return "실무형";
+    }
+
+    function renderReport(scoreX, scoreY, typeKey) {
+        const typeInfo = followershipTypes[typeKey];
+        const contentDiv = document.getElementById('app-content');
+        
+        // Draw the chart visually
+        const chartHtml = generateChartHtml(scoreX, scoreY, typeKey);
+        
+        let html = `
+            <div class="animate-fade-in-up">
+                <div class="text-center mb-8">
+                    <h2 class="text-xl text-gray-500 font-medium">당신의 팔로워십 유형은</h2>
+                    <div class="text-4xl font-bold mt-2 mb-4 ${typeInfo.textColor}">${typeInfo.name}</div>
+                    <p class="text-gray-700 max-w-2xl mx-auto">${typeInfo.description}</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <!-- Chart Area -->
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col items-center justify-center">
+                        <h3 class="font-bold text-lg mb-4">나의 위치 좌표</h3>
+                        ${chartHtml}
+                        <div class="mt-4 text-sm text-gray-600 flex gap-4">
+                            <span><strong>능동적 참여 (X):</strong> ${scoreX}점</span>
+                            <span><strong>독립적 사고 (Y):</strong> ${scoreY}점</span>
+                        </div>
+                    </div>
+
+                    <!-- Pros and Cons -->
+                    <div class="flex flex-col justify-center gap-6">
+                        <div class="bg-green-50 p-5 rounded-xl border border-green-100">
+                            <h3 class="font-bold text-green-800 text-lg mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.514"></path></svg>
+                                긍정적 특징 (장점)
+                            </h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1">
+                                ${typeInfo.pros.map(pro => `<li>${pro}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="bg-red-50 p-5 rounded-xl border border-red-100">
+                            <h3 class="font-bold text-red-800 text-lg mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.514"></path></svg>
+                                부정적 특징 (단점/위험)
+                            </h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1">
+                                ${typeInfo.cons.map(con => `<li>${con}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coaching Report -->
+                <div class="bg-blue-50 p-6 md:p-8 rounded-xl border border-blue-200">
+                    <h3 class="font-bold text-blue-900 text-xl mb-4 border-b border-blue-200 pb-2">🚀 성장을 위한 코칭 가이드</h3>
+                    <ul class="space-y-3">
+                        ${typeInfo.coaching.map(coach => `
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-blue-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span class="text-gray-800 font-medium">${coach}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+
+                <div class="mt-8 text-center">
+                    <button onclick="renderQuestionnaire()" class="text-blue-600 hover:text-blue-800 font-medium underline">
+                        다시 검사하기
+                    </button>
+                </div>
+            </div>
+        `;
+
+        contentDiv.innerHTML = html;
+        document.getElementById('footer-actions').style.display = 'block';
+        window.scrollTo(0, 0);
+    }
+
+    function generateChartHtml(x, y, currentType) {
+        // SVG size
+        const size = 300;
+        const padding = 30;
+        const innerSize = size - (padding * 2);
+        
+        // Map score 0-60 to coordinates
+        const scale = innerSize / 60;
+        const cx = padding + (x * scale);
+        const cy = size - padding - (y * scale); // Y is inverted in SVG
+
+        // Define quadrant colors based on Kelley's model colors from the provided images
+        const colors = {
+            alienated: "#fed7aa", // 소외형 (orange-200)
+            exemplary: "#bbf7d0", // 모범형 (green-200)
+            passive: "#e9d5ff",   // 수동형 (purple-200)
+            conformist: "#e5e7eb", // 순응형 (gray-200)
+            pragmatic: "#60a5fa"  // 실무형 (blue-400)
+        };
+
+        return `
+        <div class="relative w-full max-w-[300px] aspect-square mx-auto bg-white border border-gray-300 rounded shadow-sm">
+            <svg viewBox="0 0 ${size} ${size}" class="w-full h-full text-xs font-sans">
+                <!-- Background Quadrants -->
+                <rect x="${padding}" y="${padding}" width="${innerSize/2}" height="${innerSize/2}" fill="${colors.alienated}" opacity="0.6"/>
+                <rect x="${padding + innerSize/2}" y="${padding}" width="${innerSize/2}" height="${innerSize/2}" fill="${colors.exemplary}" opacity="0.6"/>
+                <rect x="${padding}" y="${padding + innerSize/2}" width="${innerSize/2}" height="${innerSize/2}" fill="${colors.passive}" opacity="0.6"/>
+                <rect x="${padding + innerSize/2}" y="${padding + innerSize/2}" width="${innerSize/2}" height="${innerSize/2}" fill="${colors.conformist}" opacity="0.6"/>
+                
+                <!-- Pragmatic Box (Middle) -->
+                <rect x="${padding + (20*scale)}" y="${size - padding - (40*scale)}" width="${20*scale}" height="${20*scale}" fill="${colors.pragmatic}" opacity="0.8" rx="5"/>
+                
+                <!-- Axis Lines -->
+                <line x1="${padding}" y1="${size/2}" x2="${size-padding}" y2="${size/2}" stroke="#9ca3af" stroke-width="2"/>
+                <line x1="${size/2}" y1="${padding}" x2="${size/2}" y2="${size-padding}" stroke="#9ca3af" stroke-width="2"/>
+
+                <!-- Labels -->
+                <text x="${size/2}" y="${padding - 10}" text-anchor="middle" class="fill-gray-600 font-bold">독립적/비판적 사고 (Y)</text>
+                <text x="${size/2}" y="${size - padding + 20}" text-anchor="middle" class="fill-gray-600 font-bold">의존적/무비판적 사고</text>
+                
+                <!-- X axis labels (rotated or positioned to fit) -->
+                <text x="${padding - 5}" y="${size/2}" text-anchor="end" alignment-baseline="middle" class="fill-gray-600 font-bold" transform="rotate(-90, ${padding - 5}, ${size/2})">수동적 참여 (X)</text>
+                <text x="${size - padding + 5}" y="${size/2}" text-anchor="start" alignment-baseline="middle" class="fill-gray-600 font-bold" transform="rotate(90, ${size - padding + 5}, ${size/2})">능동적 참여</text>
+
+                <!-- Quadrant Names -->
+                <text x="${padding + innerSize/4}" y="${padding + innerSize/4}" text-anchor="middle" alignment-baseline="middle" class="fill-gray-700">소외형</text>
+                <text x="${padding + (innerSize/4)*3}" y="${padding + innerSize/4}" text-anchor="middle" alignment-baseline="middle" class="fill-gray-700">모범형</text>
+                <text x="${padding + innerSize/4}" y="${padding + (innerSize/4)*3}" text-anchor="middle" alignment-baseline="middle" class="fill-gray-700">수동형</text>
+                <text x="${padding + (innerSize/4)*3}" y="${padding + (innerSize/4)*3}" text-anchor="middle" alignment-baseline="middle" class="fill-gray-700">순응형</text>
+                <text x="${size/2}" y="${size/2}" text-anchor="middle" alignment-baseline="middle" class="fill-white font-bold">실무형</text>
+
+                <!-- User Score Dot -->
+                <circle cx="${cx}" cy="${cy}" r="6" fill="#ef4444" stroke="#ffffff" stroke-width="2" class="drop-shadow-md">
+                    <animate attributeName="r" values="6;8;6" dur="2s" repeatCount="indefinite" />
+                </circle>
+            </svg>
+        </div>
+        `;
+    }
+
+    function downloadReport() {
+        const captureArea = document.getElementById('capture-area');
+        
+        // Brief message to user
+        const btn = document.querySelector('button[onclick="downloadReport()"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '다운로드 준비 중...';
+        btn.disabled = true;
+
+        html2canvas(captureArea, {
+            scale: 2, // High resolution
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        }).then(canvas => {
+            // Create image data
+            const imgData = canvas.toDataURL('image/jpeg', 0.9);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = imgData;
+            link.download = `팔로워십_진단결과_${new Date().toISOString().slice(0,10)}.jpg`;
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Reset button
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }).catch(err => {
+            console.error("이미지 저장 실패:", err);
+            alert("이미지를 저장하는 중 문제가 발생했습니다.");
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+
+    // Initialize the app
+    window.onload = () => {
+        renderQuestionnaire();
+    };
+</script>
+
+</body>
+</html>
