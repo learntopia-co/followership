@@ -41,8 +41,8 @@
     
     <!-- Header -->
     <header class="bg-blue-600 text-white p-6 text-center">
-        <h1 class="text-2xl md:text-3xl font-bold">버트 켈리의 팔로워십 역량 자가 검사</h1>
-        <p class="mt-2 text-blue-100 text-sm md:text-base">현재 나의 팔로워십 유형을 점검하고 성장 방안을 탐색해 보세요.</p>
+        <h1 class="text-2xl md:text-3xl font-bold">팔로워십 역량 자가 검사</h1>
+        <p class="mt-2 text-blue-100 text-sm md:text-base">자신의 팔로워 유형을 점검하고 성장 방안을 탐색해 보세요.</p>
     </header>
 
     <!-- App Content Area -->
@@ -53,11 +53,15 @@
 
 <!-- Footer / Download Button -->
 <div class="max-w-4xl mx-auto mt-6 text-center pb-8" id="footer-actions" style="display: none;">
-    <button onclick="downloadReport()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 flex items-center justify-center mx-auto">
+    <button onclick="downloadReport()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 flex items-center justify-center mx-auto mb-8">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
         결과 보고서 다운로드 (JPG)
     </button>
 </div>
+
+<footer class="w-full text-center py-6 text-gray-500 text-sm mt-auto">
+    © 2026 LEARNTOPIA. All Rights Reserved.
+</footer>
 
 <script>
     // --- Data Definitions ---
@@ -201,75 +205,70 @@
 
     // --- State Variables ---
     let answers = {};
+    let currentQuestionIndex = 0;
+    let currentFollowerType = "";
 
     // --- Functions ---
 
-    function renderQuestionnaire() {
+    function startAssessment() {
+        answers = {};
+        currentQuestionIndex = 0;
+        renderCard();
+    }
+
+    function renderCard() {
         const contentDiv = document.getElementById('app-content');
+        const q = questions[currentQuestionIndex];
+        
+        // 진행률 계산 (현재 문항 수 / 전체 문항 수)
+        const progressPercentage = Math.round((currentQuestionIndex / questions.length) * 100);
         
         let html = `
-            <div class="mb-6 bg-blue-50 p-4 rounded-lg text-sm md:text-base border border-blue-100">
-                <p class="font-bold mb-2 text-blue-800">평가 척도</p>
-                <div class="grid grid-cols-3 md:grid-cols-7 gap-2 text-center">
-                    <div>(0) 전혀 그렇지 않다</div>
-                    <div>(1) 그렇지 않다</div>
-                    <div>(2) 다소 그렇지 않다</div>
-                    <div>(3) 보통이다</div>
-                    <div>(4) 다소 그렇다</div>
-                    <div>(5) 그렇다</div>
-                    <div>(6) 매우 그렇다</div>
-                </div>
-            </div>
-            
-            <form id="assessment-form" onsubmit="calculateResults(event)">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100 text-gray-700">
-                                <th class="p-3 border-b-2 font-semibold w-12 text-center">번호</th>
-                                <th class="p-3 border-b-2 font-semibold">문항</th>
-                                <th class="p-3 border-b-2 font-semibold min-w-[200px] text-center">점수 선택 (0~6)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-
-        questions.forEach((q, index) => {
-            html += `
-                <tr class="question-row border-b border-gray-200">
-                    <td class="p-3 text-center font-medium text-gray-500">${q.id}</td>
-                    <td class="p-3 text-sm md:text-base">${q.text}</td>
-                    <td class="p-3">
-                        <div class="flex justify-between items-center w-full max-w-[250px] mx-auto">
-            `;
-            
-            for (let i = 0; i <= 6; i++) {
-                html += `
-                    <label class="radio-label">
-                        <input type="radio" name="q${q.id}" value="${i}" required class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500">
-                        <span class="text-xs mt-1">${i}</span>
-                    </label>
-                `;
-            }
-            
-            html += `
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
-
-        html += `
-                        </tbody>
-                    </table>
+            <div class="relative bg-white border border-gray-200 rounded-xl p-6 md:p-10 shadow-sm min-h-[350px] flex flex-col">
+                <!-- 우측 상단 진행률 -->
+                <div class="absolute top-4 right-6 text-xs md:text-sm font-semibold text-blue-500 bg-blue-50 px-3 py-1 rounded-full">
+                    진행률: ${progressPercentage}%
                 </div>
                 
-                <div class="mt-8 text-center">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded shadow transition duration-300">
-                        결과 확인하기
+                <div class="text-sm font-medium text-gray-400 mb-4">Question ${q.id} / ${questions.length}</div>
+                
+                <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-10 break-keep leading-tight">${q.text}</h3>
+
+                <!-- 응답 버튼 (0~6점) -->
+                <div class="flex justify-between items-stretch w-full gap-1 md:gap-2 mb-8 mt-auto">
+        `;
+        
+        const scaleLabels = ["전혀<br>그렇지 않다", "그렇지 않다", "다소<br>그렇지 않다", "보통이다", "다소 그렇다", "그렇다", "매우 그렇다"];
+        
+        for (let i = 0; i <= 6; i++) {
+            // 이전에 선택한 답변이 있다면 하이라이트 처리
+            const isSelected = answers[q.id] === i;
+            const btnClass = isSelected 
+                ? "bg-blue-600 text-white border-blue-600 shadow-md transform scale-105" 
+                : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300";
+
+            html += `
+                    <button onclick="selectAnswer(${i})" class="flex-1 flex flex-col items-center justify-start p-2 md:p-3 rounded-lg border focus:outline-none transition-all duration-200 ${btnClass}">
+                        <span class="text-lg md:text-xl font-bold mb-1">${i}</span>
+                        <span class="text-[9px] md:text-[11px] text-center leading-tight opacity-80 break-keep">${scaleLabels[i]}</span>
                     </button>
+            `;
+        }
+        
+        html += `
                 </div>
-            </form>
+
+                <!-- 하단 네비게이션 -->
+                <div class="flex justify-between pt-4 border-t border-gray-100">
+                    <button onclick="prevQuestion()" class="${currentQuestionIndex === 0 ? 'invisible' : ''} text-gray-500 hover:text-blue-600 font-medium flex items-center transition-colors">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        이전 문항
+                    </button>
+                    <div class="text-xs text-gray-400 flex items-center">
+                        원하는 점수를 클릭하면 다음으로 넘어갑니다.
+                    </div>
+                </div>
+            </div>
         `;
 
         contentDiv.innerHTML = html;
@@ -277,17 +276,34 @@
         window.scrollTo(0, 0);
     }
 
-    function calculateResults(event) {
-        event.preventDefault();
+    function selectAnswer(val) {
+        const q = questions[currentQuestionIndex];
+        answers[q.id] = val;
         
-        const form = document.getElementById('assessment-form');
-        const formData = new FormData(form);
+        // 다음 문항으로 자동 이동
+        if (currentQuestionIndex < questions.length - 1) {
+            currentQuestionIndex++;
+            renderCard();
+        } else {
+            // 마지막 문항이면 결과 계산
+            calculateResults();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            renderCard();
+        }
+    }
+
+    function calculateResults() {
         let scoreX = 0; // Active/Passive Engagement
         let scoreY = 0; // Independent/Dependent Thinking
 
         questions.forEach(q => {
-            const val = parseInt(formData.get(`q${q.id}`));
-            if (!isNaN(val)) {
+            const val = answers[q.id];
+            if (val !== undefined) {
                 if (q.axis === 'X') {
                     scoreX += val;
                 } else if (q.axis === 'Y') {
@@ -297,6 +313,7 @@
         });
 
         const type = determineType(scoreX, scoreY);
+        currentFollowerType = followershipTypes[type].name; // AI 코치에 전달할 유형 이름 저장
         renderReport(scoreX, scoreY, type);
     }
 
@@ -335,6 +352,7 @@
         
         let html = `
             <div class="animate-fade-in-up">
+                <!-- 기존 리포트 내용 -->
                 <div class="text-center mb-8">
                     <h2 class="text-xl text-gray-500 font-medium">당신의 팔로워십 유형은</h2>
                     <div class="text-4xl font-bold mt-2 mb-4 ${typeInfo.textColor}">${typeInfo.name}</div>
@@ -359,7 +377,7 @@
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.514"></path></svg>
                                 긍정적 특징 (장점)
                             </h3>
-                            <ul class="list-disc list-inside text-gray-700 space-y-1">
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm md:text-base">
                                 ${typeInfo.pros.map(pro => `<li>${pro}</li>`).join('')}
                             </ul>
                         </div>
@@ -368,7 +386,7 @@
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.514"></path></svg>
                                 부정적 특징 (단점/위험)
                             </h3>
-                            <ul class="list-disc list-inside text-gray-700 space-y-1">
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm md:text-base">
                                 ${typeInfo.cons.map(con => `<li>${con}</li>`).join('')}
                             </ul>
                         </div>
@@ -376,7 +394,7 @@
                 </div>
 
                 <!-- Coaching Report -->
-                <div class="bg-blue-50 p-6 md:p-8 rounded-xl border border-blue-200">
+                <div class="bg-blue-50 p-6 md:p-8 rounded-xl border border-blue-200 mb-8">
                     <h3 class="font-bold text-blue-900 text-xl mb-4 border-b border-blue-200 pb-2">🚀 성장을 위한 코칭 가이드</h3>
                     <ul class="space-y-3">
                         ${typeInfo.coaching.map(coach => `
@@ -388,9 +406,29 @@
                     </ul>
                 </div>
 
-                <div class="mt-8 text-center">
-                    <button onclick="renderQuestionnaire()" class="text-blue-600 hover:text-blue-800 font-medium underline">
-                        다시 검사하기
+                <!-- AI 코치 챗봇 영역 (캡처 영역 포함) -->
+                <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg border border-gray-700" id="ai-chat-section">
+                    <div class="bg-gray-900 text-white p-4 flex items-center">
+                        <span class="text-2xl mr-2">🤖</span>
+                        <h3 class="font-bold text-lg">AI 코치와의 대화</h3>
+                    </div>
+                    <div class="p-4 bg-gray-50 h-64 overflow-y-auto flex flex-col gap-3" id="ai-chat-box">
+                        <div class="text-left">
+                            <span class="inline-block bg-white border border-gray-200 text-gray-800 rounded-xl rounded-tl-none py-2 px-4 text-sm shadow-sm max-w-[85%]">
+                                안녕하세요! 당신은 <strong>'${currentFollowerType}'</strong> 결과가 나왔군요. 코칭 보고서 외에 당신의 팔로워십 성장에 대해 궁금한 점이 있다면 무엇이든 물어보세요!
+                            </span>
+                        </div>
+                    </div>
+                    <!-- 챗봇 입력창 (캡처 시 숨겨짐) -->
+                    <div class="p-3 bg-white border-t border-gray-200 flex gap-2" id="ai-chat-input-area">
+                        <input type="text" id="ai-chat-input" class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm" placeholder="궁금한 점을 입력하세요..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                        <button onclick="sendChatMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">전송</button>
+                    </div>
+                </div>
+
+                <div class="mt-8 text-center" id="retry-btn-area">
+                    <button onclick="startAssessment()" class="text-blue-600 hover:text-blue-800 font-medium underline">
+                        처음부터 다시 검사하기
                     </button>
                 </div>
             </div>
@@ -399,6 +437,85 @@
         contentDiv.innerHTML = html;
         document.getElementById('footer-actions').style.display = 'block';
         window.scrollTo(0, 0);
+    }
+
+    async function sendChatMessage() {
+        const inputEl = document.getElementById('ai-chat-input');
+        const text = inputEl.value.trim();
+        if (!text) return;
+
+        const chatBox = document.getElementById('ai-chat-box');
+        
+        // 1. 유저 메시지 화면에 추가
+        chatBox.innerHTML += `
+            <div class="text-right">
+                <span class="inline-block bg-blue-500 text-white rounded-xl rounded-tr-none py-2 px-4 text-sm shadow-sm max-w-[85%] text-left">
+                    ${text}
+                </span>
+            </div>
+        `;
+        inputEl.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 2. 로딩 인디케이터 추가
+        const loadingId = 'loading-' + Date.now();
+        chatBox.innerHTML += `
+            <div id="${loadingId}" class="text-left">
+                <span class="inline-flex items-center bg-white border border-gray-200 text-gray-500 rounded-xl rounded-tl-none py-2 px-4 text-sm shadow-sm">
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    코치가 답변을 작성 중입니다...
+                </span>
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 3. Gemini API 호출
+        try {
+            const systemPrompt = `당신은 로버트 켈리(Robert Kelley)의 팔로워십 모델에 정통한 조직 심리 전문가이자 전문 코치입니다. 현재 대화하고 있는 사용자의 팔로워십 진단 결과는 '${currentFollowerType}'입니다. 사용자의 질문에 전문적이고 친절하게, 그리고 실무에 즉시 적용할 수 있는 쉬운 개조식 문장 위주로 명확하게 답변해주세요.`;
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: text }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+            
+            const apiKey = ""; // Canvas 환경에서 자동 주입됨
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            const reply = result.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다. 응답을 생성하는 중 문제가 발생했습니다.";
+
+            // 4. 로딩 제거 및 AI 응답 추가
+            document.getElementById(loadingId).remove();
+            
+            // 간단한 마크다운 처리 (줄바꿈, 굵은 글씨)
+            const formattedReply = reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+            
+            chatBox.innerHTML += `
+                <div class="text-left animate-fade-in-up">
+                    <span class="inline-block bg-white border border-gray-200 text-gray-800 rounded-xl rounded-tl-none py-2 px-4 text-sm shadow-sm max-w-[85%]">
+                        ${formattedReply}
+                    </span>
+                </div>
+            `;
+        } catch (e) {
+            console.error(e);
+            if (document.getElementById(loadingId)) {
+                document.getElementById(loadingId).remove();
+            }
+            chatBox.innerHTML += `
+                <div class="text-left">
+                    <span class="inline-block bg-red-50 border border-red-200 text-red-800 rounded-xl rounded-tl-none py-2 px-4 text-sm shadow-sm">
+                        통신 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+                    </span>
+                </div>
+            `;
+        }
+        chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     function generateChartHtml(x, y, currentType) {
@@ -464,6 +581,12 @@
     function downloadReport() {
         const captureArea = document.getElementById('capture-area');
         
+        // 캡처 전 불필요한 UI 숨김 처리
+        const chatInputArea = document.getElementById('ai-chat-input-area');
+        const retryBtnArea = document.getElementById('retry-btn-area');
+        if (chatInputArea) chatInputArea.style.display = 'none';
+        if (retryBtnArea) retryBtnArea.style.display = 'none';
+
         // Brief message to user
         const btn = document.querySelector('button[onclick="downloadReport()"]');
         const originalText = btn.innerHTML;
@@ -488,20 +611,24 @@
             link.click();
             document.body.removeChild(link);
             
-            // Reset button
+            // Reset button & UI
             btn.innerHTML = originalText;
             btn.disabled = false;
+            if (chatInputArea) chatInputArea.style.display = 'flex';
+            if (retryBtnArea) retryBtnArea.style.display = 'block';
         }).catch(err => {
             console.error("이미지 저장 실패:", err);
             alert("이미지를 저장하는 중 문제가 발생했습니다.");
             btn.innerHTML = originalText;
             btn.disabled = false;
+            if (chatInputArea) chatInputArea.style.display = 'flex';
+            if (retryBtnArea) retryBtnArea.style.display = 'block';
         });
     }
 
     // Initialize the app
     window.onload = () => {
-        renderQuestionnaire();
+        startAssessment();
     };
 </script>
 
